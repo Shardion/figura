@@ -4,16 +4,13 @@
 
 ---@alias Outfit OutfitPart[]
 
----A fake bb group.  
+---A fake Blockbench group.  
 ---This *only* contains the function(s) used by the OutfitParts script.
 local FakeBBGroup = {setVisible = function() end}
 
--- outfit parts v2, for the figs rerat, by shardion (Modified by Grandpa Scout)  
--- did i mention you should play crosscode
---
--- outfitparts, implemented in fp, without:  
--- action wheel code (no action wheel)  
--- syncing code (no backend)
+-- OutfitParts v2, for the Figua rewite, by shardion (Modified by Grandpa Scout)  
+-- Did I mention you should play CrossCode?
+
 local outfitparts = {
   ---@type {[table]: boolean}
   parts = {},
@@ -81,9 +78,11 @@ function outfitparts.createPart(part, state)
     bbgroup = FakeBBGroup
   }
   if state == nil then state = not settingsDisableByDefault end
+  outfitparts.parts[part] = state
 
-  --Call setPart to run through the usual logic when created.
-  outfitparts.setPart(part, state)
+  --Force the part to `state`, just this once. Leave the user to clean up
+  --(by setting an outfit or using disable by default).
+  outfitparts.forceSetPart(part, state)
   return part
 end
 
@@ -96,6 +95,7 @@ function outfitparts.setOutfit(outfit)
   for _, part in pairs(outfit.parts) do
     outfitparts.forceSetPart(part, true)
   end
+  logTable(outfitparts.parts)
 end
 
 ---Creates an outfit for use later. ~GS
@@ -108,6 +108,8 @@ function outfitparts.createOutfit(partTable)
 end
 
 ---Creates a function that cycles through the list of outfits given. ~GS
+---While intended for keybinds, it should be usable in the Action Wheel,
+---too, when that rolls around. ~shardion
 ---@param outfits Outfit[]
 ---@return function
 function outfitparts.createOutfitCycleKeybind(outfits)

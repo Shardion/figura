@@ -4,16 +4,12 @@
 
 ---@alias Outfit OutfitPart[]
 
----A fake bb group.  
+---A fake Blockbench group.  
 ---This *only* contains the function(s) used by the OutfitParts script.
 local FakeBBGroup = {setVisible = function() end}
 
--- outfit parts v2, for the figs rerat, by shardion (Modified by Grandpa Scout)  
--- did i mention you should play crosscode
---
--- outfitparts, implemented in fp, without:  
--- action wheel code (no action wheel)  
--- syncing code (no backend)
+-- OutfitParts v2, for the Figua rewite, by shardion (Modified by Grandpa Scout)  
+-- Did I mention you should play CrossCode?
 local outfitparts = {
   ---@type {[table]: boolean}
   parts = {},
@@ -109,7 +105,9 @@ function outfitparts.createOutfit(partTable)
   return partTable
 end
 
----Creates a function that cycles through the list of outfits given. ~GS
+---Creates a function that cycles through the list of outfits given. ~GS  
+---While intended for keybinds, it should be usable in the Action Wheel,
+---too, when that rolls around. ~shardion
 ---@param outfits Outfit[]
 ---@return function
 function outfitparts.createOutfitCycleKeybind(outfits)

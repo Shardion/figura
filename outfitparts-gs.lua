@@ -10,6 +10,7 @@ local FakeBBGroup = {setVisible = function() end}
 
 -- OutfitParts v2, for the Figua rewite, by shardion (Modified by Grandpa Scout)  
 -- Did I mention you should play CrossCode?
+
 local outfitparts = {
   ---@type {[table]: boolean}
   parts = {},
@@ -79,9 +80,11 @@ function outfitparts.createPart(part, state)
     bbgroup = FakeBBGroup
   }
   if state == nil then state = not settingsDisableByDefault end
+  outfitparts.parts[part] = state
 
-  --Call setPart to run through the usual logic when created.
-  outfitparts.setPart(part, state)
+  --Force the part to `state`, just this once. Leave the user to clean up
+  --(by setting an outfit or using disable by default).
+  outfitparts.forceSetPart(part, state)
   return part
 end
 
@@ -105,7 +108,7 @@ function outfitparts.createOutfit(partTable)
   return partTable
 end
 
----Creates a function that cycles through the list of outfits given. ~GS  
+---Creates a function that cycles through the list of outfits given. ~GS
 ---While intended for keybinds, it should be usable in the Action Wheel,
 ---too, when that rolls around. ~shardion
 ---@param outfits Outfit[]

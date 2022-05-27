@@ -95,7 +95,6 @@ function outfitparts.setOutfit(outfit)
   for _, part in pairs(outfit.parts) do
     outfitparts.forceSetPart(part, true)
   end
-  logTable(outfitparts.parts)
 end
 
 ---Creates an outfit for use later. ~GS

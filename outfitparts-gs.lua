@@ -48,8 +48,10 @@ function outfitparts.setPart(partToSet, setTo)
         outfitparts.forceSetPart(part, false)
       end
     end
-    outfitparts.forceSetPart(partToSet, true) --Enable main part.
+    outfitparts.forceSetPart(partToSet, true) --Enable this part.
   else
+    outfitparts.forceSetPart(partToSet, false) --Disable this part.
+
     local areAllPartsDisabled = true
     local defaultPart = nil
     --Loop through all parts to determine the default part and the state of all conflicting parts.

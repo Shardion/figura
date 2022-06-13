@@ -1,81 +1,118 @@
--- outfit parts v2, for the figs rerat, by shardion
--- did i mention you should play crosscode
---
--- outfitparts, implemented in fp, without:
--- action wheel code (no action wheel)
--- syncing code (no backend)
+---@class OutfitPart
+---@field conflicts? string #A string that describes how this part should conflict with others.
+---@field bbgroup userdata #The group this outfit part represents.
+
+---@alias Outfit OutfitPart[]
+
+---A fake Blockbench group.  
+---This *only* contains the function(s) used by the OutfitParts script.
+local FakeBBGroup = {setVisible = function() end}
+
+-- OutfitParts v2, for the Figua rewite, by shardion (Modified by Grandpa Scout)  
+-- Did I mention you should play CrossCode?
+
 local outfitparts = {
-  parts = {{}, {}},
+  ---@type {[table]: boolean}
+  parts = {},
   outfits = {}
 }
 
+---Actually sets the state of a part. ~GS
+---@param partToSet table
+---@param setTo? boolean
 function outfitparts.forceSetPart(partToSet, setTo)
-  for i, part in pairs(outfitparts.parts[1]) do
-    if part == partToSet then
-      outfitparts.parts[2][part] = setTo
-      part.bbgroup:setVisible(setTo)
-    end
-  end
+  outfitparts.parts[partToSet] = setTo
+  partToSet.bbgroup:setVisible(setTo)
 end
 
--- logic spaghetti
--- why can't lua just have half normal syntax
+---Sets the state of a part and also checks for conflicts/defaults. ~GS
+---@param partToSet table
+---@param setTo? boolean
 function outfitparts.setPart(partToSet, setTo)
-  -- handles part toggling
-  setTo = setTo or not outfitparts.parts[2][partToSet]
-  if setTo == nil then setTo = true end
+  local PARTS = outfitparts.parts
+  --Make `setTo` a toggle of the current state if `nil` is passed.
+  if setTo == nil then setTo = not PARTS[partToSet] end
 
-  for i, part in pairs(outfitparts.parts[1]) do
-    if part.conflicts == partToSet.conflicts and outfitparts.parts[2][part] then
-      if setTo then
+  --If the part does not conflict, then there is no reason to check for any other parts.
+  if not partToSet.conflicts then
+    outfitparts.forceSetPart(partToSet, setTo)
+    return --RETURN EARLY
+  end
+
+  --If the part is being enabled, we should probably check for parts to be disabled.
+  --Otherwise, it cannot possibly conflict, we should check for the default instead.
+  if setTo then
+    --Loop through all parts to find and disable conflicting parts.
+    for part, partState in pairs(PARTS) do
+      if (part.conflicts == partToSet.conflicts) and partState then
         outfitparts.forceSetPart(part, false)
       end
     end
-    if part == partToSet then
-      outfitparts.forceSetPart(part, setTo)
-    end
-  end
+    outfitparts.forceSetPart(partToSet, true) --Enable this part.
+  else
+    outfitparts.forceSetPart(partToSet, false) --Disable this part.
 
-  if setTo == false and partToSet.conflicts ~= nil then
     local areAllPartsDisabled = true
-    for i, part in pairs(outfitparts.parts[1]) do
-      if part.conflicts == partToSet.conflicts and outfitparts.parts[2][part] then
+    local defaultPart = nil
+    --Loop through all parts to determine the default part and the state of all conflicting parts.
+    for part, partState in pairs(PARTS) do
+      if (part.conflicts == partToSet.conflicts) and partState then
         areAllPartsDisabled = false
+        if part.default then defaultPart = part end
       end
     end
 
-    if areAllPartsDisabled then
-      for i, part in pairs(outfitparts.parts[1]) do
-        if part.default and part.conflicts == partToSet.conflicts then
-          outfitparts.setPart(part, true)
-        end
-      end
+    --If all conflicting parts are disabled and a defaut part was found, enable it.
+    if areAllPartsDisabled and defaultPart then
+      outfitparts.forceSetPart(partToSet, true)
     end
   end
 end
 
-function outfitparts.createPart(part)
-  table.insert(outfitparts.parts[1], part)
-  outfitparts.parts[2][part] = not settingsDisableByDefault
-  part.bbgroup:setVisible(not settingsDisableByDefault)
+---Creates a new part. ~GS
+---@generic table : OutfitPart
+---@param part? table
+---@param state? boolean
+---@return table|OutfitPart
+function outfitparts.createPart(part, state)
+  part = part or {
+    conflicts = nil,
+    bbgroup = FakeBBGroup
+  }
+  if state == nil then state = not settingsDisableByDefault end
+  outfitparts.parts[part] = state
+
+  --Force the part to `state`, just this once. Leave the user to clean up
+  --(by setting an outfit or using disable by default).
+  outfitparts.forceSetPart(part, state)
   return part
 end
 
-
+---Sets an outfit by disabling all other parts and only enabling the parts in the outfit. ~GS
+---@param outfit OutfitPart[]
 function outfitparts.setOutfit(outfit)
-  for _, part in pairs(outfitparts.parts[1]) do
-    outfitparts.forceSetPart(part, false)
+  for part, state in pairs(outfitparts.parts) do
+    if state then outfitparts.forceSetPart(part, false) end
   end
   for _, part in pairs(outfit.parts) do
     outfitparts.forceSetPart(part, true)
   end
 end
 
+---Creates an outfit for use later. ~GS
+---@generic tableArray : OutfitPart[]
+---@param partTable tableArray
+---@return tableArray
 function outfitparts.createOutfit(partTable)
   table.insert(outfitparts.outfits, partTable)
   return partTable
 end
 
+---Creates a function that cycles through the list of outfits given. ~GS
+---While intended for keybinds, it should be usable in the Action Wheel,
+---too, when that rolls around. ~shardion
+---@param outfits Outfit[]
+---@return function
 function outfitparts.createOutfitCycleKeybind(outfits)
   local outfitsWithIndex = { nextOutfit = 1, outfits = outfits }
   return function()
